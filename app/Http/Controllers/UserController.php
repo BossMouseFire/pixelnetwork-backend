@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\ShortLink;
 use Exception;
 use App\User;
 use Illuminate\Http\Request;
@@ -12,13 +13,24 @@ class UserController extends Controller
     public function get($id)
     {
         try {
-            $user = User::query()->findOrFail($id);
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'surname' => $user->surname,
-                'avatar_link' => $user->avatar,
-            ];
+            if (is_numeric($id)) {
+                $user = User::query()->findOrFail($id);
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'surname' => $user->surname,
+                    'avatar' => $user->avatar,
+                ];
+            } else if (is_string($id)) {
+                $link = ShortLink::query()->where('prefix', '=', $id)->firstOrFail();
+                $user = User::query()->findOrFail($link->user_id);
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'surname' => $user->surname,
+                    'avatar' => $user->avatar,
+                ];
+            }
         } catch (Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),
@@ -63,5 +75,26 @@ class UserController extends Controller
                 'code' => 500,
             ], 500);
         }
+    }
+
+    public function changeId(Request $request)
+    {
+        $validatorErrors = Validator::make($request->all(), [
+            'prefix' => 'required|string|unique:short_links',
+            'user_id' => 'required|integer',
+        ]);
+        if ($validatorErrors->fails()) {
+            return response()->json([
+                'errors' => $validatorErrors->errors(),
+            ], 433);
+        }
+        (new ShortLink([
+            'user_id' => $request->post('user_id'),
+            'prefix' => $request->post('prefix'),
+        ]))->save();
+
+        return [
+            'message' => 'Successfully changed id',
+        ];
     }
 }

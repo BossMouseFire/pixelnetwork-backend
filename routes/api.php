@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('user.get/{id}', 'UserController@get');
+Route::post('user.change.link', 'UserController@changeId');
 
 Route::group(['prefix' => 'auth'], function () {
     Route::post('login', 'AuthController@login');
