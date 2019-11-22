@@ -44,7 +44,7 @@ class AuthController extends Controller
         $validateErrors = Validator::make($request->all(), [
             'email' => 'required|string|email',
             'password' => 'required|string',
-            'remember_me' => 'boolean'
+            'remember_me' => 'boolean',
         ]);
 
         if ($validateErrors->fails()) {

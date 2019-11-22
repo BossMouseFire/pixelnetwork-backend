@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\ShortLink;
 use Exception;
 use App\User;
+use App\Models\Friend;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -39,7 +40,6 @@ class UserController extends Controller
         }
     }
 
-    // TODO: Create auth and register via JWT
     public function store(Request $request)
     {
         try {
@@ -96,5 +96,49 @@ class UserController extends Controller
         return [
             'message' => 'Successfully changed id',
         ];
+    }
+
+    public function add(Request $request)
+    {
+        try {
+            $validatorErrors = Validator::make($request->all(), [
+                'friend_id' => 'required|integer'
+            ]);
+
+            if ($validatorErrors->fails()) {
+                return response()->json([
+                    'message' => $validatorErrors->errors(),
+                ], 433);
+            }
+
+            $friend_id = $request->post('friend_id');
+
+            $user = Friend::query()->where('user_id', $request->user()->id)->where('friend_id', $friend_id)->firstOrNew([
+                'friend_id' => $friend_id,
+                'user_id' => $request->user()->id,
+            ])->save();
+
+            return [
+                'message' => 'Shipped',
+            ];
+
+        } catch (Exception $e) {
+            return response()->json([
+                'errors' => $e->getMessage(),
+            ], 433);
+        }
+    }
+
+    public function accept(Request $request)
+    {
+        $user = Friend::query()->where('is_friends', '<>', 1)->firstOrFail();
+        if (!!$user->is_friends === false) {
+            $user->is_friends = true;
+            $user->save();
+
+            return [
+                'mesasge' => 'Accepted',
+            ];
+        }
     }
 }
